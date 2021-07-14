@@ -1,6 +1,6 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from .functions import generate_quantile_breakpoints, generate_supervised_breakpoints, create_features_from_breakpoints
+from .functions import generate_quantile_breakpoints, generate_clustering_breakpoints, generate_supervised_breakpoints, create_features_from_breakpoints
 
 class DistributionBasedFeatureExtractor(BaseEstimator, TransformerMixin):
     def __init__(self, breakpoint_type='quantile', n_bins=4, filter=True, feature_type='cnv', variant_type='del'):
@@ -14,7 +14,7 @@ class DistributionBasedFeatureExtractor(BaseEstimator, TransformerMixin):
         if self.breakpoint_type == 'quantile':
             self.breakpoints = generate_quantile_breakpoints(X, self.n_bins)
         elif self.breakpoint_type == 'clustering':
-            raise NotImplementedError()
+            self.breakpoints = generate_clustering_breakpoints(X, self.n_bins)
         elif self.breakpoint_type == 'supervised':
             self.breakpoints = generate_supervised_breakpoints(X, y, self.filter)
         else:

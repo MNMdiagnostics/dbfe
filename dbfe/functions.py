@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 
 from sklearn.preprocessing import KBinsDiscretizer
+from sklearn.mixture import GaussianMixture
 
 from matplotlib import pyplot as plt
 
@@ -24,6 +25,21 @@ def generate_quantile_breakpoints(lengths, n_bins=4):
 
     breakpoints = np.around(est.bin_edges_[0][1:-1]).astype('int')
     
+    return breakpoints
+
+def generate_clustering_breakpoints(lengths, no_clusters):
+
+    lengths_df = pd.DataFrame(lengths)
+
+    model = GaussianMixture(n_components=no_clusters, init_params='kmeans')
+    model.fit(lengths_df)
+    cluster_assignment = model.predict(lengths_df)
+
+    lengths_df['Cluster'] = cluster_assignment
+    lengths_df.Cluster = lengths_df.Cluster.astype("category")
+
+    breakpoints = lengths_df.groupby('Cluster').min().sort_values(by='LEN').LEN.to_numpy()[1:]
+
     return breakpoints
 
 def generate_supervised_breakpoints(lengths, classes, filter=True):
