@@ -1,4 +1,6 @@
 # distribution_based_features
+[![Python application](https://github.com/MNMdiagnostics/distribution-based-features/actions/workflows/python-app.yml/badge.svg?branch=main)](https://github.com/MNMdiagnostics/distribution-based-features/actions/workflows/python-app.yml)
+
 
 ```
 pip install .
