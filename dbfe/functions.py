@@ -1,12 +1,9 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 from sklearn.preprocessing import KBinsDiscretizer
 from sklearn.mixture import GaussianMixture
 from sklearn.neighbors import KernelDensity
-
-from matplotlib import pyplot as plt
 
 
 def generate_equal_bins(lengths, n_bins=4, log_scale=True):

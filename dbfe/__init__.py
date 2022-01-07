@@ -1,4 +1,5 @@
-from .functions import create_sample_features_from_bins, create_features_from_bins, calculate_density, calculate_breakpoints_and_peaks_from_density_diff, generate_supervised_bins, generate_quantile_bins, limit_bins
+from .functions import create_sample_features_from_bins, create_features_from_bins, calculate_density, \
+    calculate_breakpoints_and_peaks_from_density_diff, generate_supervised_bins, generate_quantile_bins, limit_bins
 
 from .DistributionBasedFeatureExtractor import DistributionBasedFeatureExtractor
 from .MultiTypeDBFE import MultiTypeDBFE
