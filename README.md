@@ -57,8 +57,6 @@ y_prob = pipe.predict_proba(X_test)
 print("AUC on test data: {:.3}".format(roc_auc_score(y_test, y_prob[:, 1])))
 ```
 
-![](./examples/img/dataset.png)
-
 ![](./examples/img/dbfe_plot.svg)
 
 More code examples can be found in the `examples` folder.
