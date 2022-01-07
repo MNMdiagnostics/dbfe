@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Example:
-#	python3 get_variant_lengths.py /mnt/titan/gemma_platform/breast_cancer breast
+#	python3 get_variant_lengths.py /mnt/computations/breast_cancer_results breast
 
 import pandas as pd
 import numpy as np
@@ -40,7 +40,7 @@ chrom_default_lengths = {
 
 def search_and_combine(input_folder, file_suffix, parse_func, output_file_name):
     print("Searching for", file_suffix, "files")
-    files = glob.glob(input_folder + '/**/3.pipeline-out/**/results/*' + file_suffix, recursive=False)
+    files = glob.glob(input_folder + '/*' + file_suffix, recursive=False)
     files_num = len(files)
     print("Found", str(files_num), "files")
 
@@ -325,3 +325,12 @@ def manta_vcf_to_bedpe(file):
     CI_final = CI_final[(CI_final["chrom1"].isin(chr_list)) & (CI_final["chrom2"].isin(chr_list))]
 
     return CI_final
+
+
+if __name__ == '__main__':
+    input_folder = sys.argv[1]
+    output_file = sys.argv[2]
+
+    search_and_combine(input_folder, "ascat.vcf.gz", parse_ascat, output_file + "_cnv")
+    search_and_combine(input_folder, "manta.somatic.vcf.gz", parse_manta, output_file + "_sv")
+    search_and_combine(input_folder, "strelka.somatic.indels.vcf.gz", parse_strelka, output_file + "_indel")
