@@ -4,18 +4,41 @@ import seaborn as sns
 
 from sklearn.preprocessing import KBinsDiscretizer
 from sklearn.mixture import GaussianMixture
+from sklearn.neighbors import KernelDensity
 
 from matplotlib import pyplot as plt
 
-def generate_quantile_breakpoints(lengths, n_bins=4):
-    """Generates breakpoints based on quantile binning. Uses sklearn.preprocessing.KBinsDiscretizer.
+
+def generate_equal_bins(lengths, n_bins=4, log_scale=True):
+    """Generates bins of equal width
 
     Args:
-        lengths (DataFrame/Series): A Series or DataFrame containing lengths to be discretized
+        lengths (Series): A Series of lengths to be discretized
+        n_bins (int, optional): Number of bins to generate. Defaults to 4.
+        log_scale (bool, optional): Whether to generate equal bins in linear or logarithmic scale. Defaults to True.
+
+    Returns:
+        list: A list of bins
+    """
+    if log_scale:
+        breakpoints = np.logspace(np.log10(lengths.min()), np.log10(lengths.max()), n_bins + 1)[1:-1]
+    else:
+        breakpoints = np.linspace(lengths.min(), lengths.max(), n_bins + 1)[1:-1]
+
+    result = breakpoints_to_bins(breakpoints)
+
+    return result
+
+
+def generate_quantile_bins(lengths, n_bins=4):
+    """Generates bins based on quantile binning. Uses sklearn.preprocessing.KBinsDiscretizer.
+
+    Args:
+        lengths (Series): A Series or DataFrame containing lengths to be discretized
         n_bins (int, optional): Number of bins to generate, e.g., 4 bins result in 3 breakpoints. Defaults to 4.
 
     Returns:
-        array: An array of breakpoints
+        array: An array of bins
     """
 
     data = lengths.to_frame()
@@ -25,9 +48,12 @@ def generate_quantile_breakpoints(lengths, n_bins=4):
 
     breakpoints = np.around(est.bin_edges_[0][1:-1]).astype('int')
     
-    return breakpoints
+    result = breakpoints_to_bins(breakpoints)
 
-def generate_clustering_breakpoints(lengths, no_clusters):
+    return result
+
+
+def generate_clustering_bins(lengths, no_clusters):
 
     lengths_df = pd.DataFrame(lengths)
 
@@ -40,28 +66,60 @@ def generate_clustering_breakpoints(lengths, no_clusters):
 
     breakpoints = lengths_df.groupby('Cluster').min().sort_values(by='LEN').LEN.to_numpy()[1:]
 
-    return breakpoints
+    result = breakpoints_to_bins(breakpoints)
 
-def generate_supervised_breakpoints(lengths, classes, filter=True):
-    """Generates breakpoints based on differences of length distributions between classes.
+    return result, model
+
+
+def generate_supervised_bins(lengths, classes, max_bins='auto', bw=0.5, resolution=200, log_scale=True, only_peaks=False, cv=None):
+    """Generates bins based on differences of length distributions between classes.
 
     Args:
         lengths (DataFrame/Series): Lengths with indexes to corresponding samples
         classes (DataFrame/Series): Classes with indexes to corresponding samples
-        filter (bool, optional): A flag indicating if breakpoints should be filtered based on the height of the peaks in bins or not. If False, all breakpoints are returned. Defaults to True.
+        max_bins (bool, optional): A parameter indicating how the breakpoints should be filtered. \'auto\' means that only the peaks exceeding standard deviation should be considered; int selects a given number of bins.
+        bw (float, optional): Bandwidth for kde. Used only in supervised breakpoints. Defaults to 0.5.
+        resolution (int, optimal): Resolution of kde. Used only in supervised breakpoints. Defaults to 200.
+        log_scale (bool, optional): Whether log scale should be used on the x axis to calculate the bins. Used only in supervised breakpoints. Defaults to True.
+        only_peaks (bool, optional): Whether the whole spectrum of lengths should be subdivided into features, or should only the actual peaks be selected. Used only in supervised breakpoints. Defaults to False.
+        cv (int/object/None, optional): A parameter deciding whether the kde should be averaged over cv folds or if it should be done on the whole dataset. int - specifies the number of folds; object - a cross-validation objects specifying the details of cv; None - analysis done on the whole dataset. Defaults to None.
 
     Returns:
         array: An array of breakpoints
     """
 
-    density_diff = calculate_density_difference(lengths, classes)
+    density = calculate_density(lengths, classes, bw, resolution, log_scale, cv)
+
+    d1_mean = density[density['Class'] == 1].groupby(['Length']).mean().Density
+    d0_mean = density[density['Class'] == 0].groupby(['Length']).mean().Density
+
+    density_diff = (d1_mean - d0_mean).reset_index()
 
     breakpoints, peaks = calculate_breakpoints_and_peaks_from_density_diff(density_diff)
 
-    if filter:
-        return filter_breakpoints(breakpoints, peaks, np.std(density_diff.den_diff))
+    breakpoints = np.around(breakpoints).astype('int')
+
+    bins = breakpoints_to_bins(breakpoints)
+
+    n_bins = calculate_n_bins(max_bins, density_diff, peaks, bins)
+
+    return bins, limit_bins(bins, peaks, n_bins, only_peaks), density
+
+
+def calculate_n_bins(max_bins, density_diff, peaks, bins):
+    if max_bins == 'auto' or max_bins == 'sd':
+        n_bins = np.sum((np.abs(peaks) >= np.std(density_diff.Density))*1)
+    elif isinstance(max_bins, int):
+        n_bins = max_bins
+    elif isinstance(max_bins, float):
+        n_bins = np.sum((np.abs(peaks) >= max_bins * np.max(np.abs(density_diff.Density)))*1)
+    elif max_bins == 'all':
+        n_bins = len(bins)
     else:
-        return breakpoints
+        raise Exception('Unsupported \"max_bins\" value, but this should have been detected earlier!!!')
+
+    return n_bins
+
 
 def calculate_breakpoints_and_peaks_from_density_diff(density_diff):
     """Calculates breakpoints and peaks from difference of length distributions
@@ -78,11 +136,11 @@ def calculate_breakpoints_and_peaks_from_density_diff(density_diff):
 
     curr_peak = 0
     for i in range(0, len(density_diff) - 1):
-        if abs(density_diff.den_diff[i]) > abs(curr_peak):
-            curr_peak = density_diff.den_diff[i]
+        if abs(density_diff.Density[i]) > abs(curr_peak):
+            curr_peak = density_diff.Density[i]
 
-        if density_diff.den_diff[i] * density_diff.den_diff[i + 1] < 0:
-            breakpoints.append((density_diff.length[i] + density_diff.length[i + 1]) / 2)
+        if density_diff.Density[i] * density_diff.Density[i + 1] < 0:
+            breakpoints.append((density_diff.Length[i] + density_diff.Length[i + 1]) / 2)
             peaks.append(curr_peak)
             curr_peak = 0
         
@@ -90,12 +148,17 @@ def calculate_breakpoints_and_peaks_from_density_diff(density_diff):
 
     return breakpoints, peaks
 
-def calculate_density_difference(lengths, classes):
+
+def calculate_density(lengths, classes, bw=0.5, resolution=200, log_scale=True, cv=None):
     """Calculates difference of distributions between two classes based on kde of lengths in each class.
 
     Args:
         lengths (DataFrame/Series): Lengths with indexes to corresponding samples
-        classes (DataFrame/Series): Classes with indexes to corresponding samples
+        classes (DataFrame/Series): Classes with indexes to corresponding samples. Classes need to encoded to 1 (positive) and 0 (negative).
+        bw (float, optional): Bandwidth for kde. Used only in supervised breakpoints. Defaults to 0.5.
+        resolution (int, optimal): Resolution of kde. Used only in supervised breakpoints. Defaults to 200.
+        log_scale (bool, optional): Whether log scale should be used on the x axis to calculate the bins. Used only in supervised breakpoints. Defaults to True.
+        cv (int/object/None, optional): A parameter deciding whether the kde should be averaged over cv folds or if it should be done on the whole dataset. int - specifies the number of folds; object - a cross-validation objects specifying the details of cv; None - analysis done on the whole dataset. Defaults to None.
 
     Returns:
         DataFrame: A DataFrame consisting of two columns: 'length' and 'den_diff', where den_diff is the difference in distribution between samples in two classes of a given length
@@ -103,52 +166,99 @@ def calculate_density_difference(lengths, classes):
 
     lengths = lengths.rename('Length')
     classes = classes.rename('Class')
-    data = lengths.to_frame().join(classes)
 
-    ax = sns.kdeplot(data=data, x='Length', hue='Class', log_scale=True, gridsize=512, bw_method='silverman', cut=0, common_grid=True, common_norm=False);
+    density = pd.DataFrame()
 
-    x_axis = ax.get_lines()[0].get_data()[0];
-    den_0 = ax.get_lines()[0].get_data()[1];
-    den_1 = ax.get_lines()[1].get_data()[1];
+    if log_scale:
+        x_grid = np.linspace(np.log(lengths.min()), np.log(lengths.max()), resolution)
+    else:
+        x_grid = np.linspace(lengths.min(), lengths.max(), resolution)
 
-    plt.clf();
+    if cv is None:
+        density = density.append(calculate_density_in_class(x_grid, lengths, classes, 1, bw, log_scale), ignore_index=True)
+        density = density.append(calculate_density_in_class(x_grid, lengths, classes, 0, bw, log_scale), ignore_index=True)
+    else:
+        for train_index, _ in cv.split(X=classes, y=classes):
+            lengths_train = lengths[lengths.index.isin(classes[train_index].index)]
+            classes_train = classes.iloc[train_index]
 
-    density_diff = pd.DataFrame({'length': x_axis, 'den_diff': np.array(den_0) - np.array(den_1)})
+            density = density.append(calculate_density_in_class(x_grid, lengths_train, classes_train, 1, bw, log_scale), ignore_index=True)
+            density = density.append(calculate_density_in_class(x_grid, lengths_train, classes_train, 0, bw, log_scale), ignore_index=True)
 
-    return density_diff
+    return density
 
-def filter_breakpoints(breakpoints, peaks, peak_threshold):
-    """Filters breakpoints based on the peaks in each bin. Only peaks higher than a given threshold pass.
+
+def calculate_density_in_class(x, values, classes, c, bw, log_scale):
+    kde_skl = KernelDensity(bandwidth=bw)
+    classes = classes[classes.index.isin(values.index.unique())]
+    values_c = values.loc[classes[classes == c].index].to_numpy()
+
+    if log_scale:
+        values_c = np.log(values_c)
+
+    kde_skl.fit(values_c[:, np.newaxis])
+    log_pdf = kde_skl.score_samples(x[:, np.newaxis])
+    density = np.exp(log_pdf)
+
+    if log_scale:
+        result = pd.DataFrame({'Length': np.exp(x), 'Density': np.array(density), 'Class': c})
+    else:
+        result = pd.DataFrame({'Length': x, 'Density': np.array(density), 'Class': c})
+
+    return result
+
+
+def limit_bins(bins, peaks, max_bins, only_peaks):
+
+    bins_filtered = []
+
+    order = np.argsort(-1*np.abs(peaks))
+
+    for i in range(np.min([max_bins, len(bins)])):
+        index = order[i]
+        bins_filtered.append(bins[index])
+
+    bins_filtered_ordered = sorted(bins_filtered, key=lambda tup: tup[0])
+
+    result = []
+
+    if only_peaks:
+        result = bins_filtered_ordered
+    else:
+        prev_end = 0
+        for r in bins_filtered_ordered:
+            if prev_end != r[0]:
+                result.append((prev_end, r[0]))
+
+            result.append(r)
+
+            prev_end = r[1]
+
+        if bins_filtered_ordered[len(bins_filtered_ordered) - 1][1] != np.inf:
+            result.append((bins_filtered_ordered[len(bins_filtered_ordered) - 1][1], np.inf))
+
+    return result
+
+
+def breakpoints_to_bins(breakpoints):
+    """Converts breakpoints into bins defined by tuples
 
     Args:
-        breakpoints (array): Breakpoints
-        peaks (array): Peaks in bins between breakpoints
-        peak_threshold (float): A minimal height of a peak which leaves its adjacent breakpoints
+        breakpoints (list): A list of bins
 
     Returns:
-        array: A filtered list of breakpoints
+        list: A list of tuples representing bins
     """
+    return list(zip([0, *breakpoints], [*breakpoints, np.inf]))
 
-    range_ends = [0, *breakpoints, np.inf]
-    breakpoints_filtered = []
 
-    for i in range(0, len(peaks)):
-        if np.abs(peaks[i]) >= peak_threshold:
-            breakpoints_filtered.append(range_ends[i])
-            breakpoints_filtered.append(range_ends[i + 1])
-
-    breakpoints_filtered = np.around(np.unique([0, np.inf, *breakpoints_filtered])[1:-1]).astype('int')
-
-    return breakpoints_filtered
-
-def create_sample_features_from_breakpoints(sample_lengths, breakpoints, feature_type, variant_type):
-    """Converts lengths of a given sample into features based on the supplied breakpoints
+def create_sample_features_from_bins(sample_lengths, bins, prefix):
+    """Converts lengths of a given sample into features based on the supplied bins
 
     Args:
         sample_lengths (DataFrame/Series): Lengths to be converted
-        breakpoints (array): Breakpoints
-        feature_type (str): Type of feature (e.g., cnv or sv); used as a prefix for feature name
-        variant_type (str): Type of variant (e.g., del, dup, translocation); used as a prefix for feature name
+        bins (array): Bins
+        prefix (str): Prefix for feature name
 
     Returns:
         DataFrame: A DataFrame containing all feature values for a given sample
@@ -157,36 +267,37 @@ def create_sample_features_from_breakpoints(sample_lengths, breakpoints, feature
     feature_names = []
     values = []
 
-    feature_name_prefix = '{}_{}_len'.format(feature_type, variant_type)
-    range_ends = [0, *breakpoints, np.inf]
-
-    for i in range(0, len(range_ends) - 1):
-        feature_names.append('{}_{}_{}'.format(feature_name_prefix, range_ends[i], range_ends[i + 1]))
-        values.append(sample_lengths[(sample_lengths >= range_ends[i]) & (sample_lengths < range_ends[i + 1])].shape[0])
+    for b in bins:
+        feature_names.append('{}_{}_{}'.format(prefix, b[0], b[1]))
+        values.append(sample_lengths[(sample_lengths >= b[0]) & (sample_lengths < b[1])].shape[0])
 
     row = pd.DataFrame([values], columns = feature_names, index = sample_lengths.index.unique())
 
     return row
 
-def create_features_from_breakpoints(samples_lengths, breakpoints, feature_type, variant_type):
-    """Converts lengths into features based on the supplied breakpoints
+
+def create_features_from_bins(samples_lengths, bins, prefix):
+    """Converts lengths into features based on the supplied bins
 
     Args:
         sample_lengths (DataFrame/Series): Lengths to be converted
-        breakpoints (array): Breakpoints
-        feature_type (str): Type of feature (e.g., cnv or sv); used as a prefix for feature name
-        variant_type (str): Type of variant (e.g., del, dup, translocation); used as a prefix for feature name
+        bins (array): Bins
+        prefix (str): Prefix for feature name
 
     Returns:
         DataFrame: A DataFrame containing all feature values for all samples
     """
+    if not samples_lengths.index.is_unique:
+        raise ValueError(
+            "Cannot use a dataset w non-unique indices: ",
+            samples_lengths[samples_lengths.index.duplicated()].index
+        )
 
     result = pd.DataFrame()
     
-    for index in samples_lengths.index.unique():
-        sample_lengths = samples_lengths[samples_lengths.index == index]
-
-        sample_features = create_sample_features_from_breakpoints(sample_lengths, breakpoints, feature_type, variant_type)
+    for index in samples_lengths.index:
+        single_sample_lengths = pd.Series(samples_lengths.loc[index], index=[index]*len(samples_lengths.loc[index]))
+        sample_features = create_sample_features_from_bins(single_sample_lengths, bins, prefix)
 
         if result.empty:
             result = sample_features
@@ -195,65 +306,44 @@ def create_features_from_breakpoints(samples_lengths, breakpoints, feature_type,
 
     return result
 
-def plot_data_with_breaks(data, breaks, plot_type='hist'):
-    """Plots lengths with indicated breakpoints
 
-    Args:
-        data (DataFrame/Series): Lengths to be plotted
-        breaks (array): An array of breakpoints to mark on the plot
-        plot_type (str): Type of plot to show. Available options: hist or kde.
+def is_int_tuple(range_tuple):
     """
-    
-    if plot_type == 'hist':
-        logbreaks = np.logspace(np.log10(1.0), np.log10(1e8), 300)
-        data.hist(bins=logbreaks);
-        plt.gca().set_xscale("log")
-    elif plot_type == 'kde':
-        ax = sns.kdeplot(data=data, x='Length', hue='Class', log_scale=True, gridsize=512, bw_method='silverman', cut=0, common_grid=True, common_norm=False);
-
-    for b in breaks:
-        plt.axvline(b, color='orange', linestyle='--')
-
-    plt.title("variants");
-    plt.show();
-
-def extract_features(feature_type, sv_classes, train_set, y_train, test_set=None, bp_type='supervised'):
-    """A shortcut for feature extraction for a given type of variant with a given set of possible variant classes. Calculates separate features for each variant class.
-
-    Args:
-        feature_type (str): sv or cnv
-        sv_classes (list): A list of possible variant classes (SVCLASS)
-        train_set (DataFrame): A data frame with at least two attributes: LEN and SVCLASS
-        y_train (Series/DataFrame): Classes for supervised breakpoints
-        test_set (DataFrame, optional): Additional data frame to create features based on train_set. Defaults to None.
-        bp_type (str, optional): Type of features to generate. Available options: supervised and quantile. Defaults to 'supervised'.
-
-    Returns:
-        DataFrame, DataFrame: A set of features for the input training set (and testing set, if provided, otherwise - None).
+    Checks whether a tuple contains only ints
+    :param range_tuple: tuple of values
+    :return: True if the tuple contains only ints, False otherwise
     """
-    features_train = pd.DataFrame(index = train_set.index.unique())
+    return all(isinstance(v, int) for v in range_tuple)
 
-    if test_set is not None:
-        features_test = pd.DataFrame(index = test_set.index.unique())
 
-    for sv_class in sv_classes:
-        lengths_train = train_set[train_set.SVCLASS==sv_class].LEN
+def is_float_tuple(range_tuple):
+    """
+    Checks whether a tuple contains only floats
+    :param range_tuple: tuple of values
+    :return: True if the tuple contains only floats, False otherwise
+    """
+    return all(isinstance(v, float) for v in range_tuple)
 
-        if bp_type == 'supervised':
-            breakpoints = generate_supervised_breakpoints(lengths_train, y_train)
-        elif bp_type == 'quantile':
-            breakpoints = generate_quantile_breakpoints(lengths_train)
 
-        sv_class_features_train = create_features_from_breakpoints(lengths_train, breakpoints, feature_type, sv_class)
-
-        features_train = features_train.join(sv_class_features_train)
-
-        if test_set is not None:
-            lengths_test = test_set[test_set.SVCLASS==sv_class].LEN
-            sv_class_features_test = create_features_from_breakpoints(lengths_test, breakpoints, feature_type, sv_class)
-            features_test = features_test.join(sv_class_features_test)
-
-    if test_set is not None:
-        return features_train.fillna(0), features_test.fillna(0)
+def filter_values_to_range(values, value_range):
+    """
+    Filters a list of values according to a min-max range
+    :param values: list of values to filter
+    :param value_range: min-max tuple; tuple of ints defines the minimum and maximum values, tuple of floats defines
+    the minimum and maximum quantile.
+    :return: filtered list of values
+    """
+    if value_range[0] >= value_range[1]:
+        raise ValueError("Minimum of desired range must be smaller than maximum. Got %s." % str(value_range))
+    if not isinstance(value_range, tuple) or len(value_range) != 2:
+        raise ValueError("Incorrect range. Expected tuple of size 2. Got %s." % str(value_range))
+    if is_float_tuple(value_range):
+        min_quantile = values.quantile(value_range[0])
+        max_quantile = values.quantile(value_range[1])
+        values = values.loc[(values >= min_quantile) & (values <= max_quantile)]
+    elif is_int_tuple(value_range):
+        values = values.loc[(values >= value_range[0]) & (values <= value_range[1])]
     else:
-        return features_train.fillna(0), None
+        raise ValueError(
+            "Unexpected type of range. Expected a pair of ints or floats. Got %s." % str(value_range))
+    return values

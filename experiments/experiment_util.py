@@ -20,7 +20,7 @@ from tqdm.notebook import tqdm
 from scipy.stats import friedmanchisquare, shapiro, f_oneway, wilcoxon, ttest_rel, ttest_ind
 from scikit_posthocs import posthoc_nemenyi_friedman
 
-from fase.distribution_based_features import DistributionBasedFeatureExtractor
+from dbfe import DistributionBasedFeatureExtractor
 
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
