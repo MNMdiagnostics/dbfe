@@ -23,7 +23,6 @@ pip install -r requirements.txt
 ## Quickstart
 
 ```python
-import seaborn as sns
 import pandas as pd
 
 from sklearn.metrics import roc_auc_score
@@ -42,10 +41,7 @@ stat_vals = stat_vals.groupby(stat_vals.index)['LEN'].apply(list).to_frame()
 labels = pd.read_csv(f"../experiments/data/ovarian/labels.tsv", sep='\t', index_col=0)
 labels = (labels == "RES") * 1
 stat_df = stat_vals.join(labels.CLASS_LABEL, how='inner')
-```
-![](./examples/img/dataset.png)
 
-```python
 # splitting into training and testing data
 X = stat_df.loc[:, "LEN"]
 y = stat_df.loc[:, "CLASS_LABEL"]
@@ -61,7 +57,9 @@ y_prob = pipe.predict_proba(X_test)
 print("AUC on test data: {:.3}".format(roc_auc_score(y_test, y_prob[:, 1])))
 ```
 
-![](./examples/img/dbfe_plot.png)
+![](./examples/img/dataset.png)
+
+![](./examples/img/dbfe_plot.svg)
 
 More code examples can be found in the `examples` folder.
 

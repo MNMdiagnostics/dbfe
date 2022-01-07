@@ -4,3 +4,6 @@ dbfe/__pycache__/DistributionBasedFeatureExtractor.cpython-37.pyc
 /dbfe.egg-info
 build
 .idea
+/examples/.ipynb_checkpoints/dbfe_example-checkpoint.ipynb
+/experiments/.ipynb_checkpoints/experiments-checkpoint.ipynb
+/experiments/__pycache__/experiment_util.cpython-37.pyc
