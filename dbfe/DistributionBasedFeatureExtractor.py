@@ -12,7 +12,9 @@ from .validation import check_n_bins, check_y, check_values, check_cv
 
 
 class DistributionBasedFeatureExtractor(BaseEstimator, TransformerMixin):
-    def __init__(self, breakpoint_type='quantile', n_bins=4, prefix='dbfe', bw=0.5, resolution=200, log_scale=True, only_peaks=False, cv=None, value_range=None, bins=[], include_counts=True, include_fracs=True, include_total=True):
+    def __init__(self, breakpoint_type='quantile', n_bins=4, prefix='dbfe', bw=0.5, resolution=200, log_scale=True,
+                 only_peaks=False, cv=None, value_range=None, bins=[], include_counts=True, include_fracs=True,
+                 include_total=True, random_state=None):
         """Constructor
 
         Args:
@@ -29,6 +31,7 @@ class DistributionBasedFeatureExtractor(BaseEstimator, TransformerMixin):
             include_counts (bool): Should the model generate count features. Defaults to True.
             include_fracs (bool): Should the model generate fraction features, i.e., features where the value represents the fraction of lengths in a given bin. Defaults to False.
             include_total (bool): Should the model generate a feature with the total number of lengths. Defaults to False.
+            random_state (int): Controls the random seed given to the gaussian clustering method. Pass an int for reproducible output across multiple function calls of the clustering approach.
         """
         self.breakpoint_type = breakpoint_type
         self.n_bins = n_bins
@@ -43,6 +46,7 @@ class DistributionBasedFeatureExtractor(BaseEstimator, TransformerMixin):
         self.include_counts = include_counts
         self.include_fracs = include_fracs
         self.include_total = include_total
+        self.random_state = random_state
 
     def fit(self, X, y):
         """Creates breakpoints based on the provided lengths and classes
@@ -72,7 +76,7 @@ class DistributionBasedFeatureExtractor(BaseEstimator, TransformerMixin):
                 elif self.breakpoint_type == 'quantile':
                     self.bins = generate_quantile_bins(values, self.n_bins)
                 elif self.breakpoint_type == 'clustering':
-                    self.bins, self.guassian_model = generate_clustering_bins(values, self.n_bins)
+                    self.bins, self.guassian_model = generate_clustering_bins(values, self.n_bins, self.random_state)
                 elif self.breakpoint_type == 'supervised':
                     check_y(y)
 

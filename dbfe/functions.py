@@ -50,11 +50,11 @@ def generate_quantile_bins(lengths, n_bins=4):
     return result
 
 
-def generate_clustering_bins(lengths, no_clusters):
+def generate_clustering_bins(lengths, no_clusters, random_state):
 
     lengths_df = pd.DataFrame(lengths)
 
-    model = GaussianMixture(n_components=no_clusters, init_params='kmeans')
+    model = GaussianMixture(n_components=no_clusters, init_params='kmeans', random_state=random_state)
     model.fit(lengths_df)
     cluster_assignment = model.predict(lengths_df)
 

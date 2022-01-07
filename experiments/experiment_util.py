@@ -70,7 +70,7 @@ def calculate_metrics(y_true, y_pred, y_prob):
 
 
 def sensitivity_test(X, y, breakpoint_type, cancer_type, variant_group, variant_type, algorithms, class_labels,
-                     pos_class, cv, param_name, param_values, preset_params_func=None):
+                     pos_class, cv, param_name, param_values, preset_params_func=None, random_state=23):
     result = pd.DataFrame()
 
     if preset_params_func is not None:
@@ -98,7 +98,7 @@ def sensitivity_test(X, y, breakpoint_type, cancer_type, variant_group, variant_
                     tested_params = preset_params_func(breakpoint_type, cancer_type, class_labels, variant_group,
                                                        variant_type, algorithm_name)
 
-                extractor = DistributionBasedFeatureExtractor(breakpoint_type=breakpoint_type, **tested_params)
+                extractor = DistributionBasedFeatureExtractor(breakpoint_type=breakpoint_type, random_state=random_state, **tested_params)
                 clf = clone(algorithm)
                 pipe = make_pipeline(extractor, StandardScaler(), clf)
                 pipe.fit(X_train, y_train)
@@ -186,11 +186,11 @@ def get_best_cv_param(df, param_name):
                                           "breakpoint_type", param_name]]
 
 
-def paper_ready_dbfe_plot(dataset, df, breakpoint_type, n_bins, labels, xlab, plot_name, results_folder):
+def paper_ready_dbfe_plot(dataset, df, breakpoint_type, n_bins, labels, xlab, plot_name, results_folder, random_state=23):
     sns.set_context("paper", rc={"font.size": 24, "axes.titlesize": 24, "axes.labelsize": 24})
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    extractor = DistributionBasedFeatureExtractor(breakpoint_type=breakpoint_type, n_bins=n_bins, only_peaks=True)
+    extractor = DistributionBasedFeatureExtractor(breakpoint_type=breakpoint_type, n_bins=n_bins, only_peaks=True, random_state=random_state)
     extractor.fit(dataset.LEN, dataset.CLASS_LABEL)
     extractor.plot_data_with_breaks(dataset.LEN, dataset.CLASS_LABEL, plot_type='kde', plot_ax=ax, subplot=True)
     ax.tick_params(labelsize=22)
@@ -278,7 +278,7 @@ def calculate_approach_tests(full_df, metric, test=friedmanchisquare, post_hoc=T
         print()
 
 
-def feature_importance_tests(cancer, variants, dbfe_methods, algorithms, preset_params_func=None):
+def feature_importance_tests(cancer, variants, dbfe_methods, algorithms, preset_params_func=None, random_state=23):
     result = pd.DataFrame()
     allowed_classes, cancer_type, class_labels, pos_class, _, __ = extract_cancer_varaint(cancer, (None, None))
     print(cancer)
@@ -298,7 +298,7 @@ def feature_importance_tests(cancer, variants, dbfe_methods, algorithms, preset_
             tested_param = preset_params_func(breakpoint_type, cancer_type, class_labels, variant_group, variant_type,
                                               algorithm_name)
             extractor = DistributionBasedFeatureExtractor(
-                prefix=breakpoint_type + "_" + variant_group + "_" + variant_type + "_",
+                prefix=breakpoint_type + "_" + variant_group + "_" + variant_type + "_", random_state=random_state,
                 breakpoint_type=breakpoint_type, **tested_param)
             extractor.fit(X_train_variant, y_train_variant)
 
@@ -338,7 +338,7 @@ def best_param_value(best_df, param_name, breakpoint_type, cancer_type, class_la
                                    best_df.algorithm == algorithm), param_name].values[0]
 
 
-def multimethod_holdout_tests(cancer, variant, dbfe_methods, algorithms, preset_params_func=None):
+def multimethod_holdout_tests(cancer, variant, dbfe_methods, algorithms, preset_params_func=None, random_state=23):
     result = pd.DataFrame()
     allowed_classes, cancer_type, class_labels, pos_class, variant_group, variant_type = extract_cancer_varaint(cancer,
                                                                                                                 variant)
@@ -352,7 +352,7 @@ def multimethod_holdout_tests(cancer, variant, dbfe_methods, algorithms, preset_
             tested_param = preset_params_func(breakpoint_type, cancer_type, class_labels, variant_group, variant_type,
                                               algorithm_name)
 
-            extractor = DistributionBasedFeatureExtractor(breakpoint_type=breakpoint_type, **tested_param)
+            extractor = DistributionBasedFeatureExtractor(breakpoint_type=breakpoint_type, random_state=random_state, **tested_param)
             clf = clone(algorithm)
             pipe = make_pipeline(extractor, clf)
             pipe.fit(X_train, y_train)
@@ -370,7 +370,7 @@ def multimethod_holdout_tests(cancer, variant, dbfe_methods, algorithms, preset_
     return result
 
 
-def multivariant_holdout_tests(cancer, variants, dbfe_methods, algorithms, preset_params_func=None):
+def multivariant_holdout_tests(cancer, variants, dbfe_methods, algorithms, preset_params_func=None, random_state=23):
     result = pd.DataFrame()
     allowed_classes, cancer_type, class_labels, pos_class, _, __ = extract_cancer_varaint(cancer, (None, None))
     print(cancer)
@@ -391,6 +391,7 @@ def multivariant_holdout_tests(cancer, variants, dbfe_methods, algorithms, prese
                                                   variant_type,
                                                   algorithm_name)
                 extractor = DistributionBasedFeatureExtractor(prefix=variant_group + "_" + variant_type + "_",
+                                                              random_state=random_state,
                                                               breakpoint_type=breakpoint_type, **tested_param)
                 extractor.fit(X_train_variant, y_train_variant)
 
@@ -584,7 +585,7 @@ def get_breast_clustering_data(method, variants, seed):
     for variant in variants:
         dataset = get_dataset("breast", variant[0], variant[1], ['HER2+', 'ER+ HER2-', 'TNBC'], pos_class=['HER2+'])
         X = dataset.LEN
-        extractor = DistributionBasedFeatureExtractor(breakpoint_type=method, n_bins=4,
+        extractor = DistributionBasedFeatureExtractor(breakpoint_type=method, n_bins=4, random_state=seed,
                                                       prefix=method + "_" + variant[0] + "_" + variant[1] + "_")
         extractor.fit(X, None)
 
