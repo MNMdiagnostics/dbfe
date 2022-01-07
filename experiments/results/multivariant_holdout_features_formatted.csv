@@ -1,0 +1,24 @@
+,,,features,features,features,features,features,features,features
+variant_group,,,sv+cnv,sv+cnv,sv+cnv,geneamps,sv+cnv+geneamps,sv+cnv+geneamps,sv+cnv+geneamps
+breakpoint_type,,,quantile,clustering,supervised,PAM50,quantile,clustering,supervised
+algorithm,cancer_type,classes,,,,,,,
+LR,ovarian,RES vs NONRES,224,198,48,50,274,248,98
+LR,lung,RES vs NONRES,34,38,90,50,84,88,140
+LR,breast,HER2+ vs ER+ HER2-,172,74,46,50,222,124,96
+LR,breast,HER2+ vs TNBC,106,108,36,50,156,158,86
+LR,breast,ER+ HER2- vs TNBC,218,180,50,50,268,230,100
+NB,ovarian,RES vs NONRES,128,98,50,50,178,148,100
+NB,lung,RES vs NONRES,106,84,178,50,156,134,228
+NB,breast,HER2+ vs ER+ HER2-,216,104,48,50,266,154,98
+NB,breast,HER2+ vs TNBC,200,268,36,50,250,318,86
+NB,breast,ER+ HER2- vs TNBC,228,64,36,50,278,114,86
+RF,ovarian,RES vs NONRES,132,142,34,50,182,192,84
+RF,lung,RES vs NONRES,102,88,142,50,152,138,192
+RF,breast,HER2+ vs ER+ HER2-,366,206,62,50,416,256,112
+RF,breast,HER2+ vs TNBC,242,284,50,50,292,334,100
+RF,breast,ER+ HER2- vs TNBC,174,150,56,50,224,200,106
+kNN,ovarian,RES vs NONRES,172,66,52,50,222,116,102
+kNN,lung,RES vs NONRES,42,50,90,50,92,100,140
+kNN,breast,HER2+ vs ER+ HER2-,190,94,42,50,240,144,92
+kNN,breast,HER2+ vs TNBC,188,86,36,50,238,136,86
+kNN,breast,ER+ HER2- vs TNBC,188,144,56,50,238,194,106
