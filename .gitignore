@@ -7,3 +7,4 @@ build
 /examples/.ipynb_checkpoints/dbfe_example-checkpoint.ipynb
 /experiments/.ipynb_checkpoints/experiments-checkpoint.ipynb
 /experiments/__pycache__/experiment_util.cpython-37.pyc
+.ipynb_checkpoints
