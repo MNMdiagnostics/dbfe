@@ -1,5 +1,6 @@
 # DBFE: Distribution-Based Feature Extractor
-[![Python application](https://github.com/MNMdiagnostics/distribution_based_features/actions/workflows/python-app.yml/badge.svg?branch=main)](https://github.com/MNMdiagnostics/distribution_based_features/actions/workflows/python-app.yml)
+ <-- [![PyPI version](https://badge.fury.io/py/dbfe.svg)](http://badge.fury.io/py/dbfe) -->
+[![Tests](https://github.com/MNMdiagnostics/distribution_based_features/actions/workflows/python-app.yml/badge.svg?branch=main)](https://github.com/MNMdiagnostics/distribution_based_features/actions/workflows/python-app.yml)
 ![Python 3](https://img.shields.io/badge/python-3-blue.svg)
 ![License](https://img.shields.io/badge/license-BSD-blue.svg)
 [![Discuss](https://img.shields.io/badge/discuss-github-blue.svg)](https://github.com/MNMdiagnostics/distribution_based_features/discussions)
@@ -8,13 +9,13 @@ DBFE is a Python library with feature extraction methods that facilitate classif
 
 ## Installing dbfe
 
-To install dbfe, clone the repository navigate into the repository folder, and use the command:
+To install dbfe, just execute:
 
 ```bash
-pip install .
+pip install dbfe
 ```
 
-Afterwards you can import `dbfe` and use all the classes and functions. To run all the tests and experiments you will require additional packages, which can be installed using:
+Afterwards you can import `dbfe` and use all the classes and functions. To run all the tests and experiments you will require additional packages, which can be installed using the `requirements.txt` file found in this repository:
 
 ```
 pip install -r requirements.txt
