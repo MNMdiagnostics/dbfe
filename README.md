@@ -1,5 +1,4 @@
 # DBFE: Distribution-Based Feature Extractor
- <-- [![PyPI version](https://badge.fury.io/py/dbfe.svg)](http://badge.fury.io/py/dbfe) -->
 [![Tests](https://github.com/MNMdiagnostics/distribution_based_features/actions/workflows/python-app.yml/badge.svg?branch=main)](https://github.com/MNMdiagnostics/distribution_based_features/actions/workflows/python-app.yml)
 ![Python 3](https://img.shields.io/badge/python-3-blue.svg)
 ![License](https://img.shields.io/badge/license-BSD-blue.svg)
