@@ -190,7 +190,7 @@ def paper_ready_dbfe_plot(dataset, df, breakpoint_type, n_bins, labels, xlab, pl
     sns.set_context("paper", rc={"font.size": 24, "axes.titlesize": 24, "axes.labelsize": 24})
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    extractor = DistributionBasedFeatureExtractor(breakpoint_type=breakpoint_type, n_bins=n_bins, only_peaks=True, random_state=random_state)
+    extractor = DistributionBasedFeatureExtractor(breakpoint_type=breakpoint_type, n_bins=n_bins, only_peaks=False, random_state=random_state)
     extractor.fit(dataset.LEN, dataset.CLASS_LABEL)
     extractor.plot_data_with_breaks(dataset.LEN, dataset.CLASS_LABEL, plot_type='kde', plot_ax=ax, subplot=True)
     ax.tick_params(labelsize=22)
@@ -579,13 +579,13 @@ def plot_feature_importance(df, cancer_type, class_labels, plot_name, results_fo
     sns.set_context("notebook")
 
 
-def get_breast_clustering_data(method, variants, seed):
+def get_breast_clustering_data(method, variants, n_bins, seed):
     breast_df = None
 
     for variant in variants:
         dataset = get_dataset("breast", variant[0], variant[1], ['HER2+', 'ER+ HER2-', 'TNBC'], pos_class=['HER2+'])
         X = dataset.LEN
-        extractor = DistributionBasedFeatureExtractor(breakpoint_type=method, n_bins=4, random_state=seed,
+        extractor = DistributionBasedFeatureExtractor(breakpoint_type=method, n_bins=n_bins, random_state=seed,
                                                       prefix=method + "_" + variant[0] + "_" + variant[1] + "_")
         extractor.fit(X, None)
 
