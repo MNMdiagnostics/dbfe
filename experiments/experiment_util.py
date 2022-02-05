@@ -650,4 +650,5 @@ def create_clustergram(df, results_folder, filename, color_mapping):
                          dendrogram_ratio=(.05, 0.00001), cbar_pos=None, yticklabels=False,
                          method="ward", col_cluster=True, figsize=(16, 8))
     fig.savefig(os.path.join(results_folder, filename + ".svg"))
+    fig.savefig(os.path.join(results_folder, filename + ".png"), dpi=600)
     sns.set_context("notebook")
