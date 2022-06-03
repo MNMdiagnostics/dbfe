@@ -531,25 +531,76 @@ def reformat_feature_name(feature_name):
 
         name_subparts = name_part.split("_")
         if len(name_subparts) == 3:
-            return name_subparts[1].upper() + " " + name_subparts[2].upper() + " [" + range_part.replace("_", "-") + "] (" + name_subparts[0] + ")"
+            variant_type = name_subparts[2].upper()
+            
+            if name_subparts[1].upper() == "CNV":
+                if variant_type == "DEL":
+                    variant_type = "LOSS"
+                elif variant_type == "DIP":
+                    variant_type = "NEUT"
+                elif variant_type == "DUP":
+                    variant_type = "GAIN"
+            
+            return name_subparts[1].upper() + " " + variant_type + " [" + range_part.replace("_", "-") + "] (" + name_subparts[0] + ")"
         else:
-            return name_subparts[2].upper() + " " + name_subparts[3].upper() + " [" + range_part.replace("_", "-") + "] (" + name_subparts[1] + " " + name_subparts[0] + ")"
+            variant_type = name_subparts[3].upper()
+            
+            if name_subparts[2].upper() == "CNV":
+                if variant_type == "DEL":
+                    variant_type = "LOSS"
+                elif variant_type == "DIP":
+                    variant_type = "NEUT"
+                elif variant_type == "DUP":
+                    variant_type = "GAIN"
+                    
+            return name_subparts[2].upper() + " " + variant_type + " [" + range_part.replace("_", "-") + "] (" + name_subparts[1] + " " + name_subparts[0] + ")"
 
 
 def reformat_feature_name_clustergram(feature_name):
     name_parts = feature_name.split("__")
 
     if len(name_parts) == 1:
-        return name_parts[0].split("_")[2].upper() + " " + name_parts[0].split("_")[3].upper() + " total count"
+        variant_type = name_parts[0].split("_")[3].upper()
+            
+        if name_parts[0].split("_")[2].upper() == "CNV":
+            if variant_type == "DEL":
+                variant_type = "LOSS"
+            elif variant_type == "DIP":
+                variant_type = "NEUT"
+            elif variant_type == "DUP":
+                variant_type = "GAIN"
+        
+        return name_parts[0].split("_")[2].upper() + " " + variant_type + " total count"
     else:
         name_part = name_parts[0]
         range_part = name_parts[1]
 
         name_subparts = name_part.split("_")
         if len(name_subparts) == 3:
-            return name_subparts[1].upper() + " " + name_subparts[2].upper() + " [" + range_part.replace("_", "-") + "] (count)"
+            variant_type = name_subparts[2].upper()
+            
+            if name_subparts[1].upper() == "CNV":
+                if variant_type == "DEL":
+                    variant_type = "LOSS"
+                elif variant_type == "DIP":
+                    variant_type = "NEUT"
+                elif variant_type == "DUP":
+                    variant_type = "GAIN"
+                
+            
+            return name_subparts[1].upper() + " " + variant_type + " [" + range_part.replace("_", "-") + "] (count)"
         else:
-            return name_subparts[2].upper() + " " + name_subparts[3].upper() + " [" + range_part.replace("_", "-") + "] (frac)"
+            variant_type = name_subparts[3].upper()
+            
+            if name_subparts[2].upper() == "CNV":
+                if variant_type == "DEL":
+                    variant_type = "LOSS"
+                elif variant_type == "DIP":
+                    variant_type = "NEUT"
+                elif variant_type == "DUP":
+                    variant_type = "GAIN"
+                
+            return name_subparts[2].upper() + " " + variant_type + " [" + range_part.replace("_", "-") + "] (frac)"
 
 
 def plot_feature_importance(df, cancer_type, class_labels, plot_name, results_folder, top_k=10,
