@@ -77,19 +77,22 @@ according to the terms and conditions of the Creative Commons Attribution 4.0 In
 
 ## Citing
 
-If you use dbfe as part of your workflow in a scientific publication, please consider citing the associated paper:
+If you use dbfe as part of your workflow in a scientific publication, please consider citing the associated [paper](https://doi.org/10.1093/bioinformatics/btac513):
 
 ```
 @article{piernik_2022_dbfe,
-  author       = {Maciej Piernik},
+  author       = {Piernik, Maciej and Brzezinski, Dariusz and Sztromwasser, Pawel and Pacewicz, Klaudia and 
+				  Majer-Burman, Weronika and Gniot, Michal and Sielski, Dawid and Bryzghalov, Oleksii and 
+				  Wozna, Alicja and Zawadzki, Pawel},
   title        = {DBFE: Distribution-based feature extraction from 
                   copy number and structural variants in whole-genome data},
-  journal      = {To be published},
-  year         = 2022
+  journal      = {Bioinformatics},
+  year         = 2022,
+  doi          = {10.1093/bioinformatics/btac513}
 }
 ```
 
-- Piernik, M. *et al.* (2022) DBFE: Distribution-based feature extraction from copy number and structural variants in whole-genome data. *To be published.*
+- [Piernik, M. *et al.* (2022) DBFE: Distribution-based feature extraction from copy number and structural variants in whole-genome data. Bioinformatics.](https://doi.org/10.1093/bioinformatics/btac513)
 
 ## Contact
 
